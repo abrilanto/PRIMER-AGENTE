@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi primer sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una ficha de trabajo en cinco pestañas (cuatro pasos y el resultado), columna única de lectura.
+   Acento violeta = color del Nivel 3 del documento; semáforo en verde, ámbar y rojo, separado del acento. */
+:root{
+  --bg:#F4F5FA; --surface:#FFFFFF; --surface2:#ECEEF6; --ink:#1B2238; --muted:#566079; --line:#D6DAE8;
+  --accent:#5B2FC9; --accent-ink:#FFFFFF; --accent-soft:#ECE6FB;
+  --ok:#14733A; --ok-soft:#E0F2E7; --warn:#8F5600; --warn-soft:#FBEED2; --bad:#B3261E; --bad-soft:#FBE3E0;
+  --code-bg:#141B33; --code-ink:#E6EAF7;
+  --font-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --font-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1325; --surface:#161C34; --surface2:#1E2542; --ink:#E8EBF6; --muted:#A5AEC8; --line:#2B3457;
+  --accent:#A78BFA; --accent-ink:#17112E; --accent-soft:#2A2150;
+  --ok:#5BDB8B; --ok-soft:#13301F; --warn:#F5B342; --warn-soft:#3A2A0B; --bad:#FF8A82; --bad-soft:#3B1613;
+  --code-bg:#0A0F20; --code-ink:#E6EAF7; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0E1325; --surface:#161C34; --surface2:#1E2542; --ink:#E8EBF6; --muted:#A5AEC8; --line:#2B3457;
+  --accent:#A78BFA; --accent-ink:#17112E; --accent-soft:#2A2150;
+  --ok:#5BDB8B; --ok-soft:#13301F; --warn:#F5B342; --warn-soft:#3A2A0B; --bad:#FF8A82; --bad-soft:#3B1613;
+  --code-bg:#0A0F20; --code-ink:#E6EAF7; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5;padding-inline:16px;padding-block:28px 56px}
+.wrap{max-width:920px;margin-inline:auto}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2.1rem,6vw,3.2rem);line-height:1.04;letter-spacing:-.02em;margin:.25rem 0 .6rem;text-wrap:balance}
+.lead{max-width:62ch;color:var(--muted);margin:0 0 1.4rem}
+h2{font-family:var(--font-display);font-weight:700;font-size:clamp(1.35rem,3.6vw,1.75rem);line-height:1.15;margin:0 0 .35rem;text-wrap:balance}
+h3{font-family:var(--font-display);font-weight:700;font-size:1.05rem;margin:1.6rem 0 .5rem}
+.hint{color:var(--muted);margin:0 0 1.1rem;max-width:64ch}
+/* pasos */
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px;padding:0;list-style:none}
+.steps button{width:100%;display:flex;align-items:center;gap:8px;padding:10px 10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;cursor:pointer;text-align:left;min-width:0}
+.steps .n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.85rem;background:var(--surface2);color:var(--muted)}
+.steps .t{font-weight:600;font-size:.92rem;line-height:1.15;overflow-wrap:anywhere}
+.steps button[aria-current="step"]{border-color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
+.steps button[aria-current="step"] .n{background:var(--accent);color:var(--accent-ink)}
+.steps button.done .n{background:var(--ok-soft);color:var(--ok)}
+@media (max-width:640px){.steps .t{display:none}.steps button[aria-current="step"] .t{display:block}.steps{grid-template-columns:repeat(5,auto);justify-content:start}.steps button{padding:8px}}
+/* panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:clamp(18px,4vw,32px)}
+.panel:focus{outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 1rem}
+.chip{padding:8px 14px;border:1px solid var(--line);background:var(--surface);border-radius:999px;cursor:pointer;font-weight:600;font-size:.95rem}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opts{display:grid;gap:8px;margin:0 0 1rem}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:var(--surface)}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt input{margin-top:.35rem;accent-color:var(--accent);width:18px;height:18px;flex:none}
+.opt .tx{min-width:0}
+.opt b{display:block;font-weight:600}
+.opt small{color:var(--muted)}
+.field{display:block;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);margin-top:8px}
+.field:focus{border-color:var(--accent)}
+label.lab{display:block;font-weight:600;margin:1rem 0 .2rem}
+.note{padding:12px 14px;border-radius:12px;background:var(--warn-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);margin:1rem 0;font-size:.97rem}
+.note b{color:var(--warn)}
+.note.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.note.ok b{color:var(--ok)}
+.check{display:flex;gap:10px;align-items:flex-start;margin:.5rem 0;cursor:pointer}
+.check input{margin-top:.38rem;accent-color:var(--accent);width:18px;height:18px;flex:none}
+/* semáforo */
+.sem-head,.sem-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;align-items:center}
+.sem-row{padding:10px 0;border-top:1px solid var(--line)}
+.sem-row .act{min-width:0;overflow-wrap:anywhere}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.seg label{cursor:pointer;position:relative}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:block;padding:7px 12px;font-size:.88rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.seg label+label span{border-left:1px solid var(--line)}
+.seg input:focus-visible+span{outline:3px solid var(--accent);outline-offset:-3px}
+.seg input[value="sola"]:checked+span{background:var(--ok-soft);color:var(--ok)}
+.seg input[value="aprob"]:checked+span{background:var(--warn-soft);color:var(--warn)}
+.seg input[value="no"]:checked+span{background:var(--bad-soft);color:var(--bad)}
+.warnrow{grid-column:1/-1;font-size:.9rem;color:var(--bad);margin-top:-2px}
+@media (max-width:640px){.sem-row{grid-template-columns:1fr}.seg{width:100%}.seg label{flex:1}.seg span{text-align:center;padding-inline:6px}}
+.addrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.addrow .field{margin-top:0;flex:1 1 220px}
+.btn{padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.num{width:5.2rem;display:inline-block;margin:0 6px;padding:5px 8px}
+.bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden;margin:.4rem 0 1rem}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+/* pager */
+.pager{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px}
+.pager .info{color:var(--muted);font-size:.9rem}
+/* resultado */
+.status{display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border-radius:999px;font-weight:700;font-size:.9rem;margin:.2rem 0 1rem}
+.status.ok{background:var(--ok-soft);color:var(--ok)}
+.status.pend{background:var(--warn-soft);color:var(--warn)}
+.ficha{display:grid;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:1rem 0}
+.ficha .r{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;padding:11px 14px;border-top:1px solid var(--line)}
+.ficha .r:first-child{border-top:0}
+.ficha .k{font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.ficha .v{min-width:0;overflow-wrap:anywhere}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{padding:3px 10px;border-radius:999px;font-size:.88rem;font-weight:600;background:var(--surface2)}
+.tag.g{background:var(--ok-soft);color:var(--ok)} .tag.y{background:var(--warn-soft);color:var(--warn)} .tag.r{background:var(--bad-soft);color:var(--bad)}
+@media (max-width:560px){.ficha .r{grid-template-columns:1fr;gap:4px}}
+.promptbox{background:var(--code-bg);color:var(--code-ink);border-radius:12px;padding:16px 18px;font-family:var(--font-mono);font-size:.86rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:.4rem 0 .8rem;max-height:30rem;overflow:auto}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toast{font-size:.92rem;color:var(--muted)}
+ul.pend{margin:.2rem 0 0;padding-left:1.2rem}
+.how{margin:.4rem 0 0;padding-left:1.2rem}
+.how li{margin:.25rem 0}
+</style>
+</head>
+<body>
+
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Nivel 3 · Práctica</div>
+    <h1>Mi primer sistema</h1>
+    <p class="lead">Cuatro pasos para pasar de una tarea que repites a mano a una tarea que la IA prepara sola y tú revisas. Al final obtienes el prompt de una tarea programada y una ficha para guardar. Los datos de los ejemplos son ilustrativos.</p>
+  </header>
+  <ol class="steps" id="steps" aria-label="Pasos"></ol>
+  <section class="panel" id="panel" tabindex="-1"></section>
+  <div class="pager">
+    <button class="btn" id="prev" type="button">Anterior</button>
+    <span class="info" id="info"></span>
+    <button class="btn primary" id="next" type="button">Siguiente</button>
+  </div>
+</main>
+
+<script>
+(function(){
+'use strict';
+const STEPS=['Proceso','Fuentes','Permisos','Prueba','Tu sistema'];
+const AREAS=[
+ {id:'acad',label:'Secretaría Académica',p:[
+  {t:'Seguimiento semanal de solicitudes de equivalencias y correlatividades',f:['correo','normativa','planillas'],e:['hoja','borradores','resumen']},
+  {t:'Respuesta a consultas frecuentes de estudiantes y docentes',f:['correo','normativa'],e:['borradores','resumen']}]},
+ {id:'ext',label:'Secretaría de Extensión',p:[
+  {t:'Revisión formal de propuestas de cursos y proyectos de extensión',f:['correo','expedientes','normativa'],e:['hoja','resumen']},
+  {t:'Comunicados y difusión de convocatorias abiertas',f:['calendario','expedientes'],e:['borradores','resumen']}]},
+ {id:'cyt',label:'Ciencia y Tecnología',p:[
+  {t:'Seguimiento de una convocatoria de proyectos (solicitudes, rendiciones y vencimientos)',f:['correo','expedientes','normativa','planillas'],e:['hoja','tablero','resumen']},
+  {t:'Respuesta a consultas sobre requisitos y prórrogas de informes',f:['correo','normativa'],e:['borradores','resumen']}]},
+ {id:'pos',label:'Posgrado',p:[
+  {t:'Verificación previa de requisitos de admisión y de tesis',f:['correo','expedientes','normativa'],e:['hoja','resumen']},
+  {t:'Control de plazos de tesis y de proyectos de carrera',f:['planillas','calendario'],e:['hoja','tablero','resumen']}]},
+ {id:'cs',label:'Consejo Superior',p:[
+  {t:'Preparación del orden del día y resumen de cada expediente',f:['expedientes','normativa','calendario'],e:['resumen','hoja']},
+  {t:'Borradores de proyectos de resolución',f:['expedientes','normativa'],e:['borradores','resumen']}]},
+ {id:'vin',label:'Vinculación Tecnológica',p:[
+  {t:'Primera respuesta a empresas y control de cláusulas de convenios',f:['correo','expedientes'],e:['borradores','hoja']},
+  {t:'Seguimiento de convenios próximos a vencer',f:['planillas','calendario'],e:['hoja','resumen']}]},
+ {id:'rec',label:'Rectorado',p:[
+  {t:'Resumen semanal de pendientes por secretaría',f:['correo','calendario','planillas'],e:['tablero','resumen']},
+  {t:'Borradores de notas y comunicados institucionales',f:['correo','expedientes'],e:['borradores','resumen']}]}
+];
+const FUENTES=[
+ {id:'correo',label:'Correo institucional',ph:'Ej.: casilla de la secretaría, etiqueta «Solicitudes»'},
+ {id:'normativa',label:'Carpeta de normativa vigente',ph:'Ej.: Drive > Normativa vigente'},
+ {id:'expedientes',label:'Carpeta de expedientes o solicitudes',ph:'Ej.: Drive > Convocatoria 2026'},
+ {id:'calendario',label:'Calendario',ph:'Ej.: calendario de reuniones del Consejo'},
+ {id:'planillas',label:'Hojas de cálculo de seguimiento',ph:'Ej.: planilla de rendiciones'}
+];
+const ENTREGABLES=[
+ {id:'borradores',label:'Borradores de respuesta',p:'borradores de respuesta para cada solicitud o consulta'},
+ {id:'hoja',label:'Hoja de cálculo de seguimiento',p:'una hoja de cálculo con solicitante o expediente, trámite, plazo que corre y órgano competente'},
+ {id:'tablero',label:'Tablero o informe ejecutivo',p:'un informe ejecutivo con un tablero: qué vence primero, qué está frenado y quién debe actuar'},
+ {id:'resumen',label:'Resumen de lo nuevo',p:'un resumen de lo nuevo desde la última ejecución'}
+];
+const ACCIONES=[
+ {id:'leer',t:'Leer y clasificar lo recibido',d:'sola'},
+ {id:'borrador',t:'Redactar borradores',d:'sola'},
+ {id:'hoja',t:'Armar hojas, tableros y resúmenes',d:'sola'},
+ {id:'cita',t:'Citar normativa de las carpetas indicadas',d:'sola'},
+ {id:'enviar',t:'Enviar respuestas o correos',d:'aprob'},
+ {id:'agendar',t:'Crear o mover eventos del calendario',d:'aprob'},
+ {id:'archivos',t:'Mover o renombrar archivos',d:'aprob'},
+ {id:'firmar',t:'Firmar o dar por aprobado un trámite',d:'no',g:1},
+ {id:'decidir',t:'Decidir prórrogas, excepciones o equivalencias',d:'no',g:1},
+ {id:'borrar',t:'Borrar archivos o correos',d:'no',g:1},
+ {id:'cargar',t:'Cargar datos en sistemas de gestión o completar formularios',d:'no',g:1}
+];
+const PRUEBAS=[
+ 'Lo probé a mano con tres casos reales, anonimizados.',
+ 'Comprobé que no inventa normas, artículos, plazos ni nombres de órganos.',
+ 'Comprobé que no hace nada de lo que marqué como prohibido.'
+];
+const FREQ={lunes:'Todos los lunes',habiles:'De lunes a viernes',diaria:'Todos los días'};
+const KEY='mps_v1';
+const fresh=()=>({step:0,area:null,proceso:null,otro:'',domino:false,repite:false,fuentes:{},datos:false,
+ entregables:{},acciones:Object.fromEntries(ACCIONES.map(a=>[a.id,a.d])),extra:[],
+ crit:{pal:true,n:150,norma:true,corch:true,deriva:true},pruebas:[false,false,false],freq:'lunes',hora:'08:00',nombre:''});
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S=Object.assign(fresh(),o);S.acciones=Object.assign(fresh().acciones,o.acciones||{})}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const area=()=>AREAS.find(a=>a.id===S.area);
+const procName=()=>S.otro.trim()||S.proceso||'';
+const allActions=()=>ACCIONES.concat(S.extra.map((t,i)=>({id:'x'+i,t,d:'aprob'})));
+function missing(){
+  const m=[];
+  if(!procName())m.push('Elegir o escribir un proceso (paso 1)');
+  if(!S.domino||!S.repite)m.push('Confirmar que dominas el proceso y que se repite (paso 1)');
+  if(!FUENTES.some(f=>S.fuentes[f.id]&&S.fuentes[f.id].on))m.push('Marcar al menos una fuente (paso 2)');
+  if(!ENTREGABLES.some(e=>S.entregables[e.id]))m.push('Elegir qué entrega la IA (paso 3)');
+  const n=S.pruebas.filter(Boolean).length;
+  if(n<3)m.push('Completar la prueba manual: '+n+' de 3 comprobaciones (paso 4)');
+  return m;
+}
+/* ---------- pasos ---------- */
+function renderSteps(){
+  const ol=$('#steps');
+  ol.innerHTML=STEPS.map((t,i)=>{
+    const done=i<4&&stepDone(i);
+    return `<li><button type="button" data-go="${i}" class="${done?'done':''}" ${i===S.step?'aria-current="step"':''}><span class="n">${done?'✓':i+1}</span><span class="t">${t}</span></button></li>`;
+  }).join('');
+  $$('button',ol).forEach(b=>b.onclick=()=>go(+b.dataset.go));
+}
+function stepDone(i){
+  if(i===0)return !!procName()&&S.domino&&S.repite;
+  if(i===1)return FUENTES.some(f=>S.fuentes[f.id]&&S.fuentes[f.id].on);
+  if(i===2)return ENTREGABLES.some(e=>S.entregables[e.id]);
+  if(i===3)return S.pruebas.every(Boolean);
+  return false;
+}
+function go(i){
+  S.step=Math.max(0,Math.min(4,i));save();render();
+  const p=$('#panel');p.scrollIntoView({block:'start',behavior:'auto'});p.focus({preventScroll:true});
+}
+function pager(){
+  $('#prev').disabled=S.step===0;
+  const nx=$('#next');
+  nx.style.visibility=S.step===4?'hidden':'visible';
+  nx.disabled=S.step===0&&!procName();
+  $('#info').textContent=S.step<4?`Paso ${S.step+1} de 4`:'Resultado';
+}
+function render(){renderSteps();[step1,step2,step3,step4,step5][S.step]();pager();}
+$('#prev').onclick=()=>go(S.step-1);
+$('#next').onclick=()=>go(S.step+1);
+
+/* ---------- paso 1 ---------- */
+function step1(){
+  const P=$('#panel');
+  P.innerHTML=`<h2>1. Elige un proceso que ya dominas y que se repite</h2>
+  <p class="hint">Un buen primer sistema es algo que haces cada semana, con pasos claros y donde tú puedes juzgar si el resultado está bien. Todavía no automatices lo que no dominas.</p>
+  <div class="eyebrow" style="margin-bottom:8px">Tu área</div>
+  <div class="chips" id="areas" role="group" aria-label="Área">${AREAS.map(a=>`<button type="button" class="chip" data-a="${a.id}" aria-pressed="${S.area===a.id}">${a.label}</button>`).join('')}</div>
+  <div id="procs"></div>
+  <label class="lab" for="otro">¿Tu proceso no está en la lista? Escríbelo</label>
+  <input class="field" id="otro" type="text" maxlength="160" placeholder="Ej.: control semanal de rendiciones de proyectos PIDs" value="${esc(S.otro)}">
+  <h3>Antes de seguir</h3>
+  <label class="check"><input type="checkbox" id="domino" ${S.domino?'checked':''}><span>Domino este proceso: puedo juzgar si un resultado está bien o mal.</span></label>
+  <label class="check"><input type="checkbox" id="repite" ${S.repite?'checked':''}><span>Se repite con regularidad (cada semana, cada convocatoria, cada reunión).</span></label>
+  <div id="warn1"></div>`;
+  $$('#areas .chip').forEach(b=>b.onclick=()=>{S.area=b.dataset.a;save();step1()});
+  drawProcs();
+  $('#otro').oninput=e=>{S.otro=e.target.value;save();pager();renderSteps();if(S.otro.trim()){S.proceso=null;$$('#procs input').forEach(i=>i.checked=false)}};
+  $('#domino').onchange=e=>{S.domino=e.target.checked;save();warn1();renderSteps()};
+  $('#repite').onchange=e=>{S.repite=e.target.checked;save();warn1();renderSteps()};
+  warn1();
+}
+function drawProcs(){
+  const box=$('#procs');const a=area();
+  if(!a){box.innerHTML='<p class="hint">Elige tu área para ver procesos típicos.</p>';return}
+  box.innerHTML=`<div class="opts" role="radiogroup" aria-label="Procesos de ${esc(a.label)}">${a.p.map((p,i)=>`<label class="opt"><input type="radio" name="proc" value="${i}" ${S.proceso===p.t&&!S.otro.trim()?'checked':''}><span class="tx"><b>${esc(p.t)}</b></span></label>`).join('')}</div>`;
+  $$('input',box).forEach(inp=>inp.onchange=()=>{
+    const p=a.p[+inp.value];S.proceso=p.t;S.otro='';$('#otro').value='';
+    S.fuentes={};p.f.forEach(f=>S.fuentes[f]={on:true,det:''});
+    S.entregables={};p.e.forEach(e=>S.entregables[e]=true);
+    save();pager();renderSteps();
+  });
+}
+function warn1(){
+  const w=$('#warn1');
+  w.innerHTML=S.domino?'':'<div class="note"><b>Ojo.</b> Si todavía no puedes juzgar si el resultado está bien, practica primero con los Niveles 1 y 2: un proyecto con tus criterios y revisión manual. Después vuelve aquí.</div>';
+}
+
+/* ---------- paso 2 ---------- */
+function step2(){
+  const P=$('#panel');
+  P.innerHTML=`<h2>2. Lista las fuentes y conéctalas</h2>
+  <p class="hint">Marca de dónde sacará la información el sistema y, si quieres, nombra la carpeta o la casilla exacta. Es lo que luego irá escrito en el prompt.</p>
+  <div class="opts">${FUENTES.map(f=>{const s=S.fuentes[f.id]||{};return `<div class="opt" style="display:block"><label class="check" style="margin:0"><input type="checkbox" data-f="${f.id}" ${s.on?'checked':''}><span><b>${f.label}</b></span></label><input class="field" data-d="${f.id}" type="text" maxlength="120" placeholder="${esc(f.ph)}" value="${esc(s.det||'')}" ${s.on?'':'hidden'}></div>`}).join('')}</div>
+  <h3>Datos personales</h3>
+  <label class="check"><input type="checkbox" id="datos" ${S.datos?'checked':''}><span>Las fuentes contienen datos personales (DNI, legajos, calificaciones, licencias).</span></label>
+  <div id="note2"></div>
+  <div class="note ok"><b>Conexión.</b> Para que una tarea programada lea tu correo y tus carpetas, los conectores de Gmail y Drive tienen que estar habilitados en tu cuenta de Claude. Confirma con Sistemas cuáles puede usar tu institución.</div>`;
+  $$('input[data-f]').forEach(c=>c.onchange=()=>{
+    const id=c.dataset.f;S.fuentes[id]=S.fuentes[id]||{det:''};S.fuentes[id].on=c.checked;
+    $(`input[data-d="${id}"]`).hidden=!c.checked;save();renderSteps();
+  });
+  $$('input[data-d]').forEach(i=>i.oninput=()=>{const id=i.dataset.d;S.fuentes[id]=S.fuentes[id]||{on:true};S.fuentes[id].det=i.value;save()});
+  $('#datos').onchange=e=>{S.datos=e.target.checked;save();note2()};
+  note2();
+}
+function note2(){
+  $('#note2').innerHTML=S.datos?'<div class="note"><b>Ley 25.326.</b> Los datos personales solo pueden usarse para la finalidad con que se obtuvieron y deben protegerse. Usa solo la cuenta y los conectores que tu institución habilite, reemplaza nombres y números por marcadores cuando puedas y consulta a Sistemas y Asuntos Jurídicos. El prompt incluirá una cláusula de confidencialidad.</div>':'';
+}
+
+/* ---------- paso 3 ---------- */
+function step3(){
+  const P=$('#panel');
+  const rows=allActions();
+  P.innerHTML=`<h2>3. Define qué entrega la IA y qué no puede hacer</h2>
+  <p class="hint">Borradores, tableros y resúmenes sí. Enviar, firmar o borrar, no, o solo con tu aprobación. La IA propone; la autoridad competente revisa, decide y firma.</p>
+  <h3 style="margin-top:.4rem">Qué entrega en cada ejecución</h3>
+  <div class="chips">${ENTREGABLES.map(e=>`<button type="button" class="chip" data-e="${e.id}" aria-pressed="${!!S.entregables[e.id]}">${e.label}</button>`).join('')}</div>
+  <h3>Semáforo de permisos</h3>
+  <div id="sem">${rows.map(semRow).join('')}</div>
+  <div class="addrow"><input class="field" id="xa" type="text" maxlength="110" placeholder="Agrega otra acción (queda con aprobación)"><button class="btn" id="xadd" type="button">Agregar</button></div>
+  <h3>Criterios que debe cumplir cada borrador</h3>
+  <p class="hint" style="margin-bottom:.4rem">Son los criterios del Nivel 2. La tarea programada no hereda un Proyecto, por eso van escritos dentro del prompt.</p>
+  <label class="check"><input type="checkbox" id="c-pal" ${S.crit.pal?'checked':''}><span>Menos de <input class="field num" id="c-n" type="number" min="30" max="1000" step="10" value="${S.crit.n}" aria-label="Cantidad de palabras"> palabras.</span></label>
+  <label class="check"><input type="checkbox" id="c-norma" ${S.crit.norma?'checked':''}><span>Cita solo normativa de las carpetas indicadas; no inventa números, artículos ni fechas.</span></label>
+  <label class="check"><input type="checkbox" id="c-corch" ${S.crit.corch?'checked':''}><span>Si falta un dato, lo marca entre corchetes.</span></label>
+  <label class="check"><input type="checkbox" id="c-deriva" ${S.crit.deriva?'checked':''}><span>No otorga prórrogas ni excepciones; deriva al órgano competente.</span></label>`;
+  $$('[data-e]').forEach(b=>b.onclick=()=>{const id=b.dataset.e;S.entregables[id]=!S.entregables[id];b.setAttribute('aria-pressed',!!S.entregables[id]);save();renderSteps()});
+  bindSem();
+  $('#xadd').onclick=addExtra;$('#xa').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addExtra()}};
+  [['c-pal','pal'],['c-norma','norma'],['c-corch','corch'],['c-deriva','deriva']].forEach(([id,k])=>$('#'+id).onchange=e=>{S.crit[k]=e.target.checked;save()});
+  $('#c-n').oninput=e=>{const v=parseInt(e.target.value,10);if(v>0){S.crit.n=v;save()}};
+}
+function semRow(a){
+  const v=S.acciones[a.id]||a.d;
+  const bad=a.g&&v!=='no';
+  return `<div class="sem-row" data-r="${a.id}"><div class="act">${esc(a.t)}</div><div class="seg" role="radiogroup" aria-label="${esc(a.t)}">
+   <label><input type="radio" name="s-${a.id}" value="sola" ${v==='sola'?'checked':''}><span>Sola</span></label>
+   <label><input type="radio" name="s-${a.id}" value="aprob" ${v==='aprob'?'checked':''}><span>Con aprobación</span></label>
+   <label><input type="radio" name="s-${a.id}" value="no" ${v==='no'?'checked':''}><span>Prohibido</span></label></div>
+   ${bad?'<div class="warnrow">En el documento esta acción va en rojo: la decide o la firma la autoridad competente.</div>':''}</div>`;
+}
+function bindSem(){
+  $$('#sem input[type=radio]').forEach(r=>r.onchange=()=>{
+    const id=r.name.slice(2);S.acciones[id]=r.value;save();
+    const a=allActions().find(x=>x.id===id);
+    const row=$(`.sem-row[data-r="${id}"]`);
+    const w=$('.warnrow',row);
+    if(a&&a.g){
+      if(r.value!=='no'&&!w){row.insertAdjacentHTML('beforeend','<div class="warnrow">En el documento esta acción va en rojo: la decide o la firma la autoridad competente.</div>')}
+      if(r.value==='no'&&w)w.remove();
+    }
+  });
+}
+function addExtra(){
+  const i=$('#xa');const t=i.value.trim();if(!t)return;
+  S.extra.push(t);S.acciones['x'+(S.extra.length-1)]='aprob';save();
+  $('#sem').insertAdjacentHTML('beforeend',semRow({id:'x'+(S.extra.length-1),t,d:'aprob'}));
+  bindSem();i.value='';i.focus();
+}
+
+/* ---------- paso 4 ---------- */
+function step4(){
+  const P=$('#panel');
+  P.innerHTML=`<h2>4. Pruébalo a mano y recién después prográmalo</h2>
+  <p class="hint">Antes de dejarlo trabajar solo, haz una vez el trabajo con los mismos pasos y revisa los resultados. Marca cada comprobación cuando la hayas hecho.</p>
+  <div class="bar" aria-hidden="true"><i id="pbar"></i></div>
+  <div id="pruebas">${PRUEBAS.map((t,i)=>`<label class="check"><input type="checkbox" data-p="${i}" ${S.pruebas[i]?'checked':''}><span>${t}</span></label>`).join('')}</div>
+  <div id="pmsg"></div>
+  <h3>Cuándo corre</h3>
+  <div class="row2">
+    <div><label class="lab" for="freq" style="margin-top:0">Frecuencia</label><select class="field" id="freq">${Object.entries(FREQ).map(([k,v])=>`<option value="${k}" ${S.freq===k?'selected':''}>${v}</option>`).join('')}</select></div>
+    <div><label class="lab" for="hora" style="margin-top:0">Hora</label><input class="field" id="hora" type="time" value="${S.hora}"></div>
+  </div>
+  <label class="lab" for="nombre">Nombre del sistema (opcional)</label>
+  <input class="field" id="nombre" type="text" maxlength="80" placeholder="Ej.: Seguimiento de la convocatoria 2026" value="${esc(S.nombre)}">`;
+  $$('[data-p]').forEach(c=>c.onchange=()=>{S.pruebas[+c.dataset.p]=c.checked;save();pmsg();renderSteps()});
+  $('#freq').onchange=e=>{S.freq=e.target.value;save()};
+  $('#hora').onchange=e=>{if(e.target.value){S.hora=e.target.value;save()}};
+  $('#nombre').oninput=e=>{S.nombre=e.target.value;save()};
+  pmsg();
+}
+function pmsg(){
+  const n=S.pruebas.filter(Boolean).length;
+  $('#pbar').style.width=(n/3*100)+'%';
+  $('#pmsg').innerHTML=n===3?'<div class="note ok"><b>Listo para programar.</b> Ve a «Tu sistema» para copiar el prompt.</div>':`<p class="hint" style="margin:.6rem 0 0">${n} de 3 comprobaciones. Puedes ver el prompt igual, pero sin la prueba completa queda como borrador.</p>`;
+}
+
+/* ---------- prompt y ficha ---------- */
+function buildPrompt(){
+  const a=area();const proc=procName()||'(escribe aquí tu proceso)';
+  const when={lunes:'Todos los lunes',habiles:'De lunes a viernes',diaria:'Todos los días'}[S.freq];
+  const L=[];
+  L.push(`${when} a las ${S.hora}, actúa como asistente de ${a?a.label:'mi secretaría'} en este proceso: ${proc}.`,'');
+  const fu=FUENTES.filter(f=>S.fuentes[f.id]&&S.fuentes[f.id].on).map(f=>`- ${f.label}${S.fuentes[f.id].det?': '+S.fuentes[f.id].det:''}`);
+  L.push('1. Revisa estas fuentes y detecta lo nuevo desde la última ejecución:');
+  L.push(...(fu.length?fu:['- (indica aquí tus fuentes)']),'');
+  const ent=ENTREGABLES.filter(e=>S.entregables[e.id]).map(e=>e.p);
+  L.push('2. Prepara:');
+  L.push(...(ent.length?ent.map(e=>'- '+e):['- (elige qué debe entregar)']),'');
+  const c=[];
+  if(S.crit.pal)c.push(`Cada borrador tiene menos de ${S.crit.n} palabras.`);
+  if(S.crit.norma)c.push('Cita solo normativa de las carpetas indicadas; no inventes números de resolución, artículos ni fechas.');
+  if(S.crit.corch)c.push('Si falta un dato, márcalo entre corchetes.');
+  if(S.crit.deriva)c.push('No otorgues prórrogas ni excepciones fuera de lo que prevé el reglamento; deriva al órgano competente.');
+  if(c.length){L.push('3. Antes de entregarme algo, audítalo contra estos criterios:');c.forEach((x,i)=>L.push(`   ${String.fromCharCode(97+i)}) ${x}`));L.push('   Si alguno falla, corrige y vuelve a auditar. Indica por cada borrador si cumple cada criterio.','');}
+  const g=k=>allActions().filter(x=>(S.acciones[x.id]||x.d)===k).map(x=>x.t.toLowerCase());
+  const s=g('sola'),ap=g('aprob'),no=g('no');
+  L.push('Permisos:');
+  if(s.length)L.push(`- Puedes hacer sin consultarme: ${s.join('; ')}.`);
+  if(ap.length)L.push(`- Déjalo preparado y pídeme aprobación antes de: ${ap.join('; ')}.`);
+  if(no.length)L.push(`- No hagas nunca: ${no.join('; ')}.`);
+  L.push('- No envíes ni modifiques nada fuera de lo indicado: deja todo como borrador para mi revisión.');
+  if(S.datos)L.push('- Los documentos pueden contener datos personales: trátalos con confidencialidad (Ley 25.326) y no los reproduzcas fuera de los entregables.');
+  L.push('','Al terminar, dame un resumen breve con qué revisaste y qué debo mirar primero.');
+  return L.join('\n');
+}
+function fichaRows(){
+  const a=area();
+  const fu=FUENTES.filter(f=>S.fuentes[f.id]&&S.fuentes[f.id].on).map(f=>f.label+(S.fuentes[f.id].det?` (${S.fuentes[f.id].det})`:''));
+  const ent=ENTREGABLES.filter(e=>S.entregables[e.id]).map(e=>e.label);
+  const g=k=>allActions().filter(x=>(S.acciones[x.id]||x.d)===k).map(x=>x.t);
+  return {nombre:S.nombre.trim()||'Mi primer sistema',area:a?a.label:'',proceso:procName(),fu,ent,sola:g('sola'),aprob:g('aprob'),no:g('no'),freq:`${FREQ[S.freq]}, ${S.hora}`,pruebas:S.pruebas.filter(Boolean).length};
+}
+function fichaHTML(){
+  const r=fichaRows();const li=a=>a.length?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'<p>—</p>';
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(r.nombre)}</title><style>
+body{font:15px/1.5 Calibri,"Segoe UI",sans-serif;color:#1B2238;max-width:760px;margin:32px auto;padding:0 20px}
+h1{font-size:26px;margin:0 0 4px}.sub{color:#566079;margin:0 0 20px}h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#5B2FC9;margin:22px 0 6px;border-bottom:1px solid #D6DAE8;padding-bottom:4px}
+ul{margin:0;padding-left:20px}.g{color:#14733A}.y{color:#8F5600}.r{color:#B3261E}pre{background:#F1F2F8;border-radius:8px;padding:14px;white-space:pre-wrap;font:13px/1.5 Consolas,monospace}
+</style></head><body><h1>${esc(r.nombre)}</h1><p class="sub">Ficha de sistema · Nivel 3 · ${esc(r.area)} · ${esc(r.freq)}</p>
+<h2>Proceso</h2><p>${esc(r.proceso)}</p><h2>Fuentes</h2>${li(r.fu)}<h2>Qué entrega</h2>${li(r.ent)}
+<h2 class="g">La IA hace sola</h2>${li(r.sola)}<h2 class="y">Con aprobación</h2>${li(r.aprob)}<h2 class="r">Prohibido</h2>${li(r.no)}
+<h2>Prueba manual</h2><p>${r.pruebas} de 3 comprobaciones completas.</p><h2>Prompt de la tarea programada</h2><pre>${esc(buildPrompt())}</pre>
+<p class="sub">La IA redacta, analiza y propone; la autoridad competente revisa, decide y firma.</p></body></html>`;
+}
+/* ---------- paso 5 ---------- */
+let dl=null;
+function step5(){
+  const P=$('#panel');const r=fichaRows();const miss=missing();const ok=miss.length===0;
+  const tags=(arr,c)=>arr.length?`<div class="tags">${arr.map(x=>`<span class="tag ${c}">${esc(x)}</span>`).join('')}</div>`:'<span class="hint">Ninguna</span>';
+  P.innerHTML=`<h2>${esc(r.nombre)}</h2>
+  <div class="status ${ok?'ok':'pend'}">${ok?'Listo para programar':'Borrador: faltan '+miss.length+' puntos'}</div>
+  ${ok?'':`<ul class="pend">${miss.map(m=>`<li>${esc(m)}</li>`).join('')}</ul>`}
+  <div class="ficha">
+    <div class="r"><div class="k">Proceso</div><div class="v">${esc(r.proceso||'Sin definir')}${r.area?`<br><span class="hint" style="margin:0">${esc(r.area)}</span>`:''}</div></div>
+    <div class="r"><div class="k">Fuentes</div><div class="v">${tags(r.fu,'')}</div></div>
+    <div class="r"><div class="k">Entrega</div><div class="v">${tags(r.ent,'')}</div></div>
+    <div class="r"><div class="k">Hace sola</div><div class="v">${tags(r.sola,'g')}</div></div>
+    <div class="r"><div class="k">Con aprobación</div><div class="v">${tags(r.aprob,'y')}</div></div>
+    <div class="r"><div class="k">Prohibido</div><div class="v">${tags(r.no,'r')}</div></div>
+    <div class="r"><div class="k">Corre</div><div class="v">${esc(r.freq)}</div></div>
+    <div class="r"><div class="k">Prueba manual</div><div class="v">${r.pruebas} de 3 comprobaciones</div></div>
+  </div>
+  <h3>Prompt de la tarea programada</h3>
+  <div class="promptbox" id="pr" tabindex="0">${esc(buildPrompt())}</div>
+  <div class="actions"><button class="btn primary" id="cp" type="button">Copiar prompt</button>
+   <button class="btn" id="d1" type="button" hidden>Guardar ficha (.html)</button>
+   <button class="btn" id="d2" type="button" hidden>Guardar prompt (.txt)</button>
+   <span class="toast" id="toast" role="status"></span></div>
+  <h3>Cómo programarlo en Claude</h3>
+  <ol class="how"><li>Abre Claude y crea una tarea programada (los resultados se revisan en «Scheduled», en la barra lateral; requiere un plan pago).</li>
+  <li>Pega este prompt y elige la frecuencia y la hora indicadas.</li>
+  <li>Revisa los primeros resultados antes de confiar en ellos. Cada ejecución es una sesión independiente y no hereda ningún Proyecto: por eso los criterios están dentro del prompt.</li></ol>`;
+  $('#cp').onclick=copy;
+  if(dl){$('#d1').hidden=false;$('#d2').hidden=false;
+    $('#d1').onclick=()=>saveFile(r.nombre.replace(/[^\wáéíóúñÁÉÍÓÚÑ -]+/g,'').trim().replace(/\s+/g,'-').toLowerCase()+'.html',fichaHTML());
+    $('#d2').onclick=()=>saveFile('prompt-tarea-programada.txt',buildPrompt());}
+}
+function toast(t){const e=$('#toast');if(e)e.textContent=t}
+async function copy(){
+  const txt=buildPrompt();
+  try{await navigator.clipboard.writeText(txt);toast('Prompt copiado.');return}catch(e){}
+  const pr=$('#pr');const rg=document.createRange();rg.selectNodeContents(pr);const sel=getSelection();sel.removeAllRanges();sel.addRange(rg);
+  toast('Texto seleccionado: cópialo con Ctrl+C.');
+}
+async function saveFile(name,data){
+  try{await dl.save({filename:name,data});toast('Archivo guardado.')}
+  catch(e){toast(e&&e.code==='declined'?'No se guardó el archivo.':'No se pudo guardar el archivo en esta vista.')}
+}
+render();
+try{
+  if(window.claude&&window.claude.use){window.claude.use('downloads').then(d=>{dl=d;if(S.step===4)step5()}).catch(()=>{})}
+  else{dl={save:async({filename,data})=>{const u=URL.createObjectURL(new Blob([data],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}}}
+}catch(e){}
+})();
+</script>
+
+</body>
+</html>
